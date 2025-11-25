@@ -30,9 +30,10 @@ The goal is to:
 2. Document the technical approach with code snippets and explanations
 3. Provide insights that could inform other speech-to-text projects on Linux/Wayland
 
-## Analysis
+## Analysis Documents
 
-See the full technical analysis: **[Virtual Keyboard Implementation Analysis](analysis/virtual-keyboard-implementation.md)**
+- **[Virtual Keyboard Implementation](analysis/virtual-keyboard-implementation.md)** - How the uinput approach works
+- **[Security & Portability](analysis/security-and-portability.md)** - Security assessment and porting to other languages (Python, Go, C)
 
 ### Summary of Findings
 
