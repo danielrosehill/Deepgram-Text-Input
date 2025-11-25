@@ -30,16 +30,49 @@ The goal is to:
 2. Document the technical approach with code snippets and explanations
 3. Provide insights that could inform other speech-to-text projects on Linux/Wayland
 
-## Analysis Documents
+## Analysis
 
-- [analysis/](analysis/) - Detailed technical analysis of the Deepgram implementation
+See the full technical analysis: **[Virtual Keyboard Implementation Analysis](analysis/virtual-keyboard-implementation.md)**
 
-## Key Questions to Answer
+### Summary of Findings
 
-- How does the virtual keyboard device get created?
-- What kernel interfaces are used?
-- How is privilege escalation handled?
-- What makes this approach more reliable than `ydotool`?
+The Deepgram approach works by:
+
+1. **Direct kernel-level access** via `/dev/uinput` - bypassing userspace input tools entirely
+2. **Privilege escalation with immediate drop** - runs as root only long enough to create the virtual device, then drops to user privileges
+3. **Pure Rust implementation** - no external dependencies for keyboard simulation
+
+### Why This Works on Wayland
+
+Unlike `ydotool` which requires a persistent daemon with socket communication (prone to permission issues and race conditions), Deepgram's approach:
+
+- Opens `/dev/uinput` directly as root
+- Creates a virtual keyboard device via ioctl calls
+- Drops privileges immediately after device creation
+- Keeps the file descriptor open - it remains usable after privilege drop
+- Writes input events directly to the kernel, below the display server layer
+
+This makes it **protocol-agnostic** - works identically on X11 and Wayland because it operates at the kernel level.
+
+### Key Code Locations
+
+| File | Purpose |
+|------|---------|
+| `src/virtual_keyboard.rs` | Creates/manages the uinput virtual keyboard |
+| `src/input_event.rs` | Linux input event structures and key codes |
+| `src/main.rs` | Privilege escalation and dropping |
+
+### Implications for Other STT Projects
+
+Any speech-to-text project could adopt this pattern:
+
+1. Run as root initially (via sudo)
+2. Open `/dev/uinput` and create virtual keyboard
+3. Drop privileges back to user
+4. Keep the file descriptor - it remains usable
+5. Write input events directly to the FD
+
+This completely bypasses `ydotool`, `xdotool`, and any display-server-specific input injection.
 
 ## Source Project
 
